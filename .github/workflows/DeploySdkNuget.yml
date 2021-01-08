@@ -17,7 +17,12 @@ jobs:
         dotnet-version: 3.1.100
     - name: Build with dotnet
       run: dotnet build --configuration Release
-    - name: Create the package
+    - name: Create the package (main)
       run: dotnet pack --include-symbols --include-source --configuration Release src/MyJetTools.Synchronization /p:Version=${GITHUB_REF#refs/tags/}
-    - name: Publish the package to GPR
+    - name: Publish the package to GPR (main)
       run: dotnet nuget push src/MyJetTools.Synchronization/bin/Release/*.nupkg -s "https://api.nuget.org/v3/index.json" -k ${{ secrets.NUGET_TOCKEN }}
+
+    - name: Create the package 
+      run: dotnet pack --include-symbols --include-source --configuration Release src/MyJetTools.Synchronization.Prometheus /p:Version=${GITHUB_REF#refs/tags/}
+    - name: Publish the package to GPR (Prometheus)
+      run: dotnet nuget push src/MyJetTools.Synchronization.Prometheus/bin/Release/*.nupkg -s "https://api.nuget.org/v3/index.json" -k ${{ secrets.NUGET_TOCKEN }}

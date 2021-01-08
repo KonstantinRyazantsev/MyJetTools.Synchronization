@@ -7,7 +7,7 @@ using example:
 static void Main(string[] args)
 {
     var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-    var pubsub = new PublishBuffer<int>(loggerFactory, "test");
+    var pubsub = PublishBuffer<int>.Create(loggerFactory, "test");
 
     // activate subscriber
     pubsub.Subscribe(Handler);
@@ -33,4 +33,14 @@ private static async Task Handler(List<int> arg, CancellationToken token)
     Console.WriteLine();
     await Task.Delay(1000, token);    
 }
+```
+
+# MyJetTools.Synchronization.Prometheus
+
+To setup PublishBuffer with Prometheus metrics:
+
+1. add nuget library `MyJetTools.Synchronization.Prometheus`
+2. setup metrics
+```
+var pubsub = PublishBuffer<int>.Create(loggerFactory, "test").AddPrometheus();
 ```
