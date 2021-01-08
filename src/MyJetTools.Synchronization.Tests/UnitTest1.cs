@@ -195,8 +195,9 @@ namespace MyJetTools.Synchronization.Tests
             Console.WriteLine("put 3, 4");
             pubsub.PutRange(new[] { 3,4 });
 
-            
 
+
+            Console.WriteLine("UnSubscribe");
             pubsub.UnSubscribe();
             
             Console.WriteLine("Done");

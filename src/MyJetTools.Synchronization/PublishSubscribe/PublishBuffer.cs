@@ -218,7 +218,7 @@ namespace MyJetTools.Synchronization.PublishSubscribe
                         HandlerTimeLast.Set(timer.ElapsedMilliseconds);
                         if (data.Count > 0)
                         {
-                            var delay = Math.Round((double)timer.ElapsedMilliseconds / data.Count, 1000);
+                            var delay = Math.Round((double)timer.ElapsedMilliseconds / data.Count, 3);
                             HandlerTimePerEventLast.Set(delay);
                         }
                     }
