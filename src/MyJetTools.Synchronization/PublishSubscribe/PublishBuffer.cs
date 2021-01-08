@@ -39,6 +39,12 @@ namespace MyJetTools.Synchronization.PublishSubscribe
             .CreateHistogram("publish_buffer_handler_time_avg_ms",
                 "PublishBuffer data handling delay in ms. Avg value");
 
+        public static readonly Gauge HandlerTimePerEventLast = Metrics
+            .CreateGauge("publish_buffer_handler_time_per_event_last_ms",
+                "PublishBuffer data handling delay in ms. Last value average per event",
+                new GaugeConfiguration { LabelNames = new[] { "name" } });
+
+
         public static readonly Counter IterationWithWaitCount = Metrics
             .CreateCounter("publish_buffer_iteration_with_wait_count",
                 "Counter read data iteration with wait data.",
@@ -210,6 +216,11 @@ namespace MyJetTools.Synchronization.PublishSubscribe
                     {
                         timer.Stop();
                         HandlerTimeLast.Set(timer.ElapsedMilliseconds);
+                        if (data.Count > 0)
+                        {
+                            var delay = Math.Round((double)timer.ElapsedMilliseconds / data.Count, 1000);
+                            HandlerTimePerEventLast.Set(delay);
+                        }
                     }
                 }
             }

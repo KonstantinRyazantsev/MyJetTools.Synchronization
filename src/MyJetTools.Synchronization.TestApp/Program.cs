@@ -27,6 +27,8 @@ namespace MyJetTools.Synchronization.TestApp
             Console.WriteLine("Press enter ...");
             Console.ReadLine();
             Console.WriteLine("Done");
+
+            pubsub.Dispose();
         }
 
         private static async Task Handler(List<int> arg, CancellationToken token)
