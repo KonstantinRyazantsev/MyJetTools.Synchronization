@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 
 namespace MyJetTools.Synchronization.PublishSubscribe
 {
-    public class PublishBuffer<T>: IDisposable
+    public class PublishBuffer<T>: IPublisher<T>, IDisposable
     {
         private readonly string _name;
 
