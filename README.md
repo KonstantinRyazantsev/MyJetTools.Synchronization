@@ -1,5 +1,9 @@
 # MyJetTools.Synchronization
 
+## PublishBuffer - buffer with many publishers and single handler
+
+PublishBuffer implement pattern with many async publisher in queue and single handler. PublishBuffer implements a pattern with many queued asynchronous publishers and one handler. The handler processes messages in batches
+
 using example:
 
 ```csharp
@@ -36,6 +40,8 @@ private static async Task Handler(List<int> arg, CancellationToken token)
 ```
 
 # MyJetTools.Synchronization.Prometheus
+
+## PublishBuffer
 
 To setup PublishBuffer with Prometheus metrics:
 
