@@ -18,10 +18,12 @@ static void Main(string[] args)
 
     // simulate publisher
     while(true)
-    pubsub.Put(1);
-    pubsub.Put(2);
-    pubsub.Put(3);
-    pubsub.Put(4);
+    {
+        pubsub.Put(1);
+        pubsub.Put(2);
+        pubsub.Put(3);
+        pubsub.Put(4);
+    }
     
     // clear
     pubsub.Dispose();
