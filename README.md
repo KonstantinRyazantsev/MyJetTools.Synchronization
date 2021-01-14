@@ -11,7 +11,7 @@ using example:
 static void Main(string[] args)
 {
     var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-    var pubsub = PublishBuffer<int>.Create(loggerFactory, "test");
+    var pubsub = PublishBuffer<int>.Create(loggerFactory.CreateLogger<PublishBuffer<int>>(), "test");
 
     // activate subscriber
     pubsub.Subscribe(Handler);
@@ -29,15 +29,15 @@ static void Main(string[] args)
     pubsub.Dispose();
 }
 
-private static async Task Handler(List<int> arg, CancellationToken token)
+private static async Task Handler(List<int> items, CancellationToken cancellationToken)
 {
-    Console.Write($"Receive Batch ({token.IsCancellationRequested}): ");
-    foreach (int i in arg)
+    Console.Write($"Receive Batch ({cancellationToken.IsCancellationRequested}): ");
+    foreach (int i in items)
     {
         Console.Write($"{i}, ");
     }
     Console.WriteLine();
-    await Task.Delay(1000, token);    
+    await Task.Delay(1000, cancellationToken);    
 }
 ```
 
@@ -50,5 +50,5 @@ To setup PublishBuffer with Prometheus metrics:
 1. add nuget library `MyJetTools.Synchronization.Prometheus`
 2. setup metrics
 ```
-var pubsub = PublishBuffer<int>.Create(loggerFactory, "test").AddPrometheus();
+var pubsub = PublishBuffer<int>.Create(loggerFactory.CreateLogger<PublishBuffer<int>>(), "test").AddPrometheus();
 ```
