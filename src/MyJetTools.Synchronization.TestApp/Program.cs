@@ -12,7 +12,7 @@ namespace MyJetTools.Synchronization.TestApp
         static void Main(string[] args)
         {
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var pubsub = new PublishBuffer<int>(loggerFactory, "test");
+            var pubsub = new PublishBuffer<int>(loggerFactory.CreateLogger<PublishBuffer<int>>(), "test");
 
             var token = new CancellationTokenSource();
             Console.WriteLine("Start");

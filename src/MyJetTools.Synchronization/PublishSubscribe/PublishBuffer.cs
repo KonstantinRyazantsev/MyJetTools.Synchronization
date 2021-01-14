@@ -1,50 +1,50 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
-using System.Dynamic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace MyJetTools.Synchronization.PublishSubscribe
 {
+    public delegate Task SubscriberCallback<T>(List<T> items, CancellationToken cancellationToken);
+    public delegate void MetricsIterationWaitCountCallback(string bufferName, bool isSyncIteration);
+    public delegate void MetricsIterationCallback(string bufferName, bool isSuccess, long executionTimeMs, int batchSize);
+    public delegate void MetricsQueueInOutSizeCallback(string bufferName, int countIn, int countOut, int queueSize);
+
     public class PublishBuffer<T>: IPublisher<T>, IDisposable
     {
         private readonly string _name;
-
-        private readonly ILogger _logger;
+        private readonly ILogger<PublishBuffer<T>> _logger;
         private readonly object _gate = new object();
         private List<T> _buffer = new List<T>();
-
         private TaskCompletionSource<List<T>> _tcs;
-
-        private Func<List<T>, CancellationToken, Task> _handler;
-
+        private SubscriberCallback<T> _handler;
         private CancellationTokenSource _tokenAggregateSource;
+        private MetricsQueueInOutSizeCallback _metricsQueueInOutSizeCallback;
+        private MetricsIterationCallback _metricsIterationCallback;
+        private MetricsIterationWaitCountCallback _metricsIterationWaitCountCallback;
 
-        public PublishBuffer(ILoggerFactory loggerFactory, string name)
+        public PublishBuffer(ILogger<PublishBuffer<T>> logger, string name = null)
         {
-            _name = name;
-            _logger = loggerFactory.CreateLogger(GetType());
+            _name = name ?? $"{typeof(T).Name}";
+            _logger = logger;
         }
 
-        public static PublishBuffer<T> Create(ILoggerFactory loggerFactory, string name)
+        public static PublishBuffer<T> Create(ILogger<PublishBuffer<T>> logger, string name = null)
         {
-            return new PublishBuffer<T>(loggerFactory, name);
+            return new PublishBuffer<T>(logger, name);
         }
 
-        public void Subscribe(Func<List<T>, CancellationToken, Task> handler, CancellationToken token = default)
+        public void Subscribe(SubscriberCallback<T> handler, CancellationToken token = default)
         {
             lock (_gate)
             {
                 if (_handler != null)
                 {
-                    _logger.LogWarning("PublishBuffer ({name}) already has subscriber. Cannot subscribe several times", _name);
-                    throw new Exception($"PublishBuffer ({_name}) already has subscriber. Cannot subscribe several times");
+                    _logger.LogWarning("PublishBuffer ({PublishBufferName}) already has a subscriber. Can't subscribe several times", _name);
+                    throw new InvalidOperationException($"PublishBuffer ({_name}) already has a subscriber. Can't subscribe several times");
                 }
 
                 _handler = handler;
@@ -56,10 +56,10 @@ namespace MyJetTools.Synchronization.PublishSubscribe
 
             Task.Run(Process, _tokenAggregateSource.Token);
 
-            _logger.LogInformation("PublishBuffer ({name}) is Subscribed", _name);
+            _logger.LogInformation("PublishBuffer ({PublishBufferName}) subscription has been added", _name);
         }
 
-        public void UnSubscribe()
+        public void Unsubscribe()
         {
             lock (_gate)
             {
@@ -68,7 +68,7 @@ namespace MyJetTools.Synchronization.PublishSubscribe
                     _tokenAggregateSource.Dispose();
                     _tokenAggregateSource = null;
 
-                    _logger.LogInformation("PublishBuffer ({name}) is UnSubscribed", _name);
+                    _logger.LogInformation("PublishBuffer ({PublishBufferName}) subscription has been removed", _name);
                 }
             }
         }
@@ -81,8 +81,8 @@ namespace MyJetTools.Synchronization.PublishSubscribe
             {
                 if (_tokenAggregateSource == null || _tokenAggregateSource.IsCancellationRequested)
                 {
-                    _logger.LogWarning("PublishBuffer ({name}) are stopped and cannot register message", _name);
-                    throw new Exception($"PublishBuffer ({_name}) are stopped and cannot register message");
+                    _logger.LogWarning("PublishBuffer ({PublishBufferName}) is stopped, can't put the item", _name);
+                    throw new InvalidOperationException($"PublishBuffer ({_name}) is stopped, can't put the item");
                 }
 
                 _buffer.Add(item);
@@ -110,8 +110,8 @@ namespace MyJetTools.Synchronization.PublishSubscribe
             {
                 if (_tokenAggregateSource == null || _tokenAggregateSource.IsCancellationRequested)
                 {
-                    _logger.LogWarning("PublishBuffer ({name}) are stopped and cannot register message", _name);
-                    throw new Exception($"PublishBuffer ({_name}) are stopped and cannot register message");
+                    _logger.LogWarning("PublishBuffer ({PublishBufferName}) is stopped, can't put the items", _name);
+                    throw new InvalidOperationException($"PublishBuffer ({_name}) is stopped, can't put the items");
                 }
 
                 var size = _buffer.Count;
@@ -135,7 +135,7 @@ namespace MyJetTools.Synchronization.PublishSubscribe
 
         private async Task Process()
         {
-            _logger.LogInformation("PublishBuffer ({name}) is started", _name);
+            _logger.LogInformation("PublishBuffer ({PublishBufferName}) has been started", _name);
             try
             {
                 while (_tokenAggregateSource?.IsCancellationRequested == false)
@@ -156,8 +156,8 @@ namespace MyJetTools.Synchronization.PublishSubscribe
                     catch (Exception e)
                     {
                         isSuccess = false;
-                        _logger.LogError(e, "PublishBuffer ({name}) receive exception from handler. Data: {dataJson}",
-                            _name, $"json: {JsonConvert.SerializeObject(data)}");
+                        _logger.LogError(e, "PublishBuffer ({PublishBufferName}) got the exception from the handler. Batch: {@PublishBufferBatch}",
+                            _name, data);
                     }
                     finally
                     {
@@ -171,10 +171,10 @@ namespace MyJetTools.Synchronization.PublishSubscribe
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "PublishBuffer ({name}) unexpected exception", _name);
+                _logger.LogError(ex, "PublishBuffer ({PublishBufferName}) got the unhandled exception. Terminating.", _name);
             }
 
-            UnSubscribe();
+            Unsubscribe();
         }
 
         private Task<List<T>> WaitBatchAsync(CancellationToken token)
@@ -182,7 +182,7 @@ namespace MyJetTools.Synchronization.PublishSubscribe
             lock (_gate)
             {
                 if (_tcs != null)
-                    throw new Exception("Cannot read buffer in several threads");
+                    throw new InvalidOperationException("Can't read the buffer by several threads");
 
                 if (_buffer.Any())
                 {
@@ -203,20 +203,13 @@ namespace MyJetTools.Synchronization.PublishSubscribe
 
         public void Dispose()
         {
-            UnSubscribe();
+            Unsubscribe();
         }
 
-        private Action<string, int, int, int> _metricsQueueInOutSizeCallback;
-        private Action<string, bool, long, int> _metricsIterationCallback;
-        private Action<string, bool> _metricsIterationWaitCountCallback;
-
         /// <summary>
-        /// Add callback to handle queue change. Parameters:
-        /// 1. int countIn
-        /// 2. int countOut
-        /// 3. int queueSize
+        /// Add callback to handle queue change.
         /// </summary>
-        public PublishBuffer<T> AddMetricsQueueInOutSizeCallback(Action<string, int, int, int> metricsQueueInOutSizeCallback)
+        public PublishBuffer<T> AddMetricsQueueInOutSizeCallback(MetricsQueueInOutSizeCallback metricsQueueInOutSizeCallback)
         {
             _metricsQueueInOutSizeCallback = metricsQueueInOutSizeCallback;
 
@@ -224,13 +217,9 @@ namespace MyJetTools.Synchronization.PublishSubscribe
         }
 
         /// <summary>
-        /// Add callback to handle iteration metrics. Parameters:
-        /// 1. PublishBuffer name
-        /// 2. bool isSuccess - subscriber iteration finished success or with exception
-        /// 3. long executionTimeMs
-        /// 4. int batchSize
+        /// Add callback to handle iteration metrics.
         /// </summary>
-        public PublishBuffer<T> AddMetricsIterationCallback(Action<string, bool, long, int> metricsIterationCallback)
+        public PublishBuffer<T> AddMetricsIterationCallback(MetricsIterationCallback metricsIterationCallback)
         {
             _metricsIterationCallback = metricsIterationCallback;
 
@@ -238,11 +227,9 @@ namespace MyJetTools.Synchronization.PublishSubscribe
         }
 
         /// <summary>
-        /// Add callback to handle notification about subscriber iteration - execute sync or async mode. Parameters:
-        /// 1. PublishBuffer name
-        /// 2. bool isSyncIteration
+        /// Add callback to handle notification about subscriber iteration - execute sync or async mode.
         /// </summary>
-        public PublishBuffer<T> AddMetricsIterationWaitCountCallback(Action<string, bool> metricsIterationWaitCountCallback)
+        public PublishBuffer<T> AddMetricsIterationWaitCountCallback(MetricsIterationWaitCountCallback metricsIterationWaitCountCallback)
         {
             _metricsIterationWaitCountCallback = metricsIterationWaitCountCallback;
 
@@ -264,6 +251,4 @@ namespace MyJetTools.Synchronization.PublishSubscribe
             _metricsIterationWaitCountCallback?.Invoke(_name, isSyncIteration);
         }
     }
-
-    
 }

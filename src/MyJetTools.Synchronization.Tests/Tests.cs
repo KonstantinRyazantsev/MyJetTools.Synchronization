@@ -19,7 +19,7 @@ namespace MyJetTools.Synchronization.Tests
         public void Test1()
         {
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var pubsub = new PublishBuffer<int>(loggerFactory, "test");
+            var pubsub = new PublishBuffer<int>(loggerFactory.CreateLogger<PublishBuffer<int>>(), "test");
 
             Console.WriteLine("Start");
 
@@ -30,7 +30,7 @@ namespace MyJetTools.Synchronization.Tests
             pubsub.Put(3);
 
             Thread.Sleep(2000);
-            pubsub.UnSubscribe();
+            pubsub.Unsubscribe();
             Thread.Sleep(2000);
 
             Console.WriteLine("Done");
@@ -40,7 +40,7 @@ namespace MyJetTools.Synchronization.Tests
         public void Test2()
         {
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var pubsub = new PublishBuffer<int>(loggerFactory, "test");
+            var pubsub = new PublishBuffer<int>(loggerFactory.CreateLogger<PublishBuffer<int>>(), "test");
 
             Console.WriteLine("Start");
 
@@ -56,7 +56,7 @@ namespace MyJetTools.Synchronization.Tests
             pubsub.Put(5);
 
             Thread.Sleep(1000);
-            pubsub.UnSubscribe();
+            pubsub.Unsubscribe();
             Thread.Sleep(1000);
 
             Console.WriteLine("Done");
@@ -66,7 +66,7 @@ namespace MyJetTools.Synchronization.Tests
         public void Test_Subscriber_Call_Sync()
         {
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var pubsub = new PublishBuffer<int>(loggerFactory, "test");
+            var pubsub = new PublishBuffer<int>(loggerFactory.CreateLogger<PublishBuffer<int>>(), "test");
 
             Console.WriteLine("Start");
 
@@ -81,7 +81,7 @@ namespace MyJetTools.Synchronization.Tests
             pubsub.Put(3);
 
             Thread.Sleep(3000);
-            pubsub.UnSubscribe();
+            pubsub.Unsubscribe();
             Thread.Sleep(3000);
 
             Console.WriteLine("Done");
@@ -91,7 +91,7 @@ namespace MyJetTools.Synchronization.Tests
         public void Test_Subscriber_Call_ASync()
         {
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var pubsub = new PublishBuffer<int>(loggerFactory, "test");
+            var pubsub = new PublishBuffer<int>(loggerFactory.CreateLogger<PublishBuffer<int>>(), "test");
 
             Console.WriteLine("Start");
 
@@ -106,7 +106,7 @@ namespace MyJetTools.Synchronization.Tests
             pubsub.Put(3);
 
             Thread.Sleep(3000);
-            pubsub.UnSubscribe();
+            pubsub.Unsubscribe();
             Thread.Sleep(3000);
 
             Console.WriteLine("Done");
@@ -116,7 +116,7 @@ namespace MyJetTools.Synchronization.Tests
         public void Test3()
         {
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var pubsub = new PublishBuffer<int>(loggerFactory, "test");
+            var pubsub = new PublishBuffer<int>(loggerFactory.CreateLogger<PublishBuffer<int>>(), "test");
 
             Console.WriteLine("Start");
 
@@ -124,10 +124,10 @@ namespace MyJetTools.Synchronization.Tests
             Thread.Sleep(1000);
 
             pubsub.Put(1);
-            pubsub.UnSubscribe();
+            pubsub.Unsubscribe();
 
             Thread.Sleep(2000);
-            pubsub.UnSubscribe();
+            pubsub.Unsubscribe();
             Thread.Sleep(2000);
 
             Console.WriteLine("Done");
@@ -137,7 +137,7 @@ namespace MyJetTools.Synchronization.Tests
         public void Test4()
         {
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var pubsub = new PublishBuffer<int>(loggerFactory, "test");
+            var pubsub = new PublishBuffer<int>(loggerFactory.CreateLogger<PublishBuffer<int>>(), "test");
 
             Console.WriteLine("Start");
 
@@ -145,7 +145,7 @@ namespace MyJetTools.Synchronization.Tests
             Thread.Sleep(1000);
 
             pubsub.Put(1);
-            pubsub.UnSubscribe();
+            pubsub.Unsubscribe();
 
             try
             {
@@ -162,7 +162,7 @@ namespace MyJetTools.Synchronization.Tests
         public void Test5()
         {
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var pubsub = new PublishBuffer<int>(loggerFactory, "test");
+            var pubsub = new PublishBuffer<int>(loggerFactory.CreateLogger<PublishBuffer<int>>(), "test");
 
             Console.WriteLine("Start");
 
@@ -183,7 +183,7 @@ namespace MyJetTools.Synchronization.Tests
         public void Test6()
         {
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var pubsub = new PublishBuffer<int>(loggerFactory, "test");
+            var pubsub = new PublishBuffer<int>(loggerFactory.CreateLogger<PublishBuffer<int>>(), "test");
 
             Console.WriteLine("Start");
 
@@ -198,7 +198,7 @@ namespace MyJetTools.Synchronization.Tests
 
 
             Console.WriteLine("UnSubscribe");
-            pubsub.UnSubscribe();
+            pubsub.Unsubscribe();
             
             Console.WriteLine("Done");
         }
@@ -207,7 +207,7 @@ namespace MyJetTools.Synchronization.Tests
         public void Test7()
         {
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            var pubsub = new PublishBuffer<int>(loggerFactory, "test");
+            var pubsub = new PublishBuffer<int>(loggerFactory.CreateLogger<PublishBuffer<int>>(), "test");
 
             Console.WriteLine("Start");
 
@@ -215,7 +215,7 @@ namespace MyJetTools.Synchronization.Tests
             Thread.Sleep(1000);
 
             pubsub.PutRange(new []{1,2});
-            pubsub.UnSubscribe();
+            pubsub.Unsubscribe();
 
             try
             {
